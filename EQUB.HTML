@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EQUB APP</title>
+    
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #e9ecef;
+        }
+        .container {
+            max-width: 600px; 
+            margin: 50px auto; 
+            background: white;
+            padding: 20px; 
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+        }
+        h1 {
+            text-align: center;
+            color: #343a40;
+            font-family: 'Arial', sans-serif;
+            font-weight: bold;
+            font-size: 2em; 
+            margin-bottom: 20px;
+        }
+        h1 img {
+            width: 10%; 
+            height: auto;
+            border-radius: 50%;
+            margin: 0 10px; 
+        }
+        .attendee-list {
+            margin-top: 20px;
+        }
+        .badge {
+            background-color: #007bff;
+        }
+        .btn-circle {
+            width: 60px; 
+            height: 60px; 
+            border-radius: 50%; 
+            padding: 0; 
+            font-size: 1.2em; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            margin: 10px auto;
+        }
+        .btn-success {
+            background-color: #28a745;
+            border: none;
+        }
+        .btn-success:hover {
+            background-color: #218838;
+            transform: scale(1.05);
+        }
+        .btn-danger {
+            background-color: #dc3545;
+            border: none;
+        }
+        .btn-danger:hover {
+            background-color: #c82333;
+            transform: scale(1.05);
+        }
+        @media (max-width: 768px) {
+            h1 img {
+                width: 15%; 
+            }
+            h1 {
+                font-size: 1.5em; 
+            }
+        }
+    </style>
+    
+</head>
+<body>
+    <div class="container">
+        <h1>
+            EQub 
+            <img src="IMAGE/Screenshot 2025-03-02 011100.png" alt="App Logo">
+            App
+        </h1>
+        <div class="form-group">
+            <input type="text" id="name" class="form-control" placeholder="Enter Name" required>
+        </div>
+        <div class="form-group">
+            <input type="number" id="amount" class="form-control" placeholder="Enter Amount Collected" required>
+        </div>
+        <button class="btn btn-success btn-circle" onclick="addAttendant()">+</button> 
+        <h2 class="attendee-list">Attendee List</h2>
+        <ul id="attendeeList" class="list-group"></ul>
+        <h3>Total Amount Collected: $<span id="totalAmount">0</span></h3>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        let totalAmount = 0;
+
+        $(document).ready(function() {
+            loadAttendees();
+        });
+
+        function addAttendant() {
+            const nameInput = $('#name');
+            const amountInput = $('#amount');
+            const name = nameInput.val().trim();
+            const amount = parseFloat(amountInput.val().trim());
+
+            if (name && !isNaN(amount) && amount > 0) {
+                const listItem = createListItem(name, amount);
+                $('#attendeeList').append(listItem);
+
+                totalAmount += amount;
+                $('#totalAmount').text(totalAmount.toFixed(2));
+
+                saveAttendee(name, amount);
+
+                nameInput.val('');
+                amountInput.val('');
+            } else {
+                alert('Please enter a valid name and amount.');
+            }
+        }
+
+        function createListItem(name, amount) {
+            return $(`
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <span class="attendee-name">${name}</span>
+                    <span class="badge badge-primary badge-pill">$${amount.toFixed(2)}</span>
+                    <button class="btn btn-warning btn-sm ml-2" onclick="editAttendee(this)">Edit</button>
+                    <button class="btn btn-danger btn-sm ml-2" onclick="removeAttendee(this, '${name}', ${amount})">Remove</button>
+                </li>
+            `);
+        }
+
+        function editAttendee(button) {
+            const listItem = $(button).closest('li');
+            const name = listItem.find('.attendee-name').text();
+            const amount = parseFloat(listItem.find('.badge').text().replace('$', ''));
+
+            $('#name').val(name);
+            $('#amount').val(amount);
+
+            removeAttendee(button, name, amount); // Remove the item after editing
+        }
+
+        function removeAttendee(button, name, amount) {
+            $(button).closest('li').remove(); 
+            totalAmount -= amount; 
+            $('#totalAmount').text(totalAmount.toFixed(2)); 
+
+            // Update localStorage
+            updateLocalStorage(name, amount);
+            loadAttendees(); 
+        }
+
+        function saveAttendee(name, amount) {
+            const attendees = JSON.parse(localStorage.getItem('attendees')) || [];
+            attendees.push({ name, amount });
+            localStorage.setItem('attendees', JSON.stringify(attendees));
+        }
+
+        function updateLocalStorage(name, amount) {
+            const attendees = JSON.parse(localStorage.getItem('attendees')) || [];
+            const updatedAttendees = attendees.filter(attendee => attendee.name !== name || attendee.amount !== amount);
+            localStorage.setItem('attendees', JSON.stringify(updatedAttendees));
+        }
+
+        function loadAttendees() {
+            const attendees = JSON.parse(localStorage.getItem('attendees')) || [];
+            attendees.forEach(attendee => {
+                const listItem = createListItem(attendee.name, attendee.amount);
+                $('#attendeeList').append(listItem);
+                totalAmount += attendee.amount;
+            });
+            $('#totalAmount').text(totalAmount.toFixed(2));
+        }
+    </script>
+</body>
+</html>
